@@ -42,7 +42,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Listen to Supabase Auth state changes and load roles
   useEffect(() => {
-    if (!supabaseClient) {
+    const client = supabaseClient;
+    if (!client) {
       // If Supabase is not configured, fall back to mock adminMode
       const storedAdmin = localStorage.getItem('kavi_admin_mode');
       if (storedAdmin === 'true') {
@@ -59,7 +60,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const { data, error } = await supabaseClient
+        const { data, error } = await client
           .from('user_roles')
           .select('role')
           .eq('id', currentUser.id)
@@ -89,14 +90,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Get current session
-    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+    client.auth.getSession().then(({ data: { session } }) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       checkUserRoleAndMode(currentUser);
     });
 
     // Listen to changes
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       checkUserRoleAndMode(currentUser);
