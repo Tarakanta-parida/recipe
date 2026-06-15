@@ -28,6 +28,10 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "Kavi's Kitchen",
   },
+  icons: {
+    icon: "/assets/logo.jpg",
+    apple: "/assets/logo.jpg",
+  },
 };
 
 export default function RootLayout({

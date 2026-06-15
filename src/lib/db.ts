@@ -226,6 +226,7 @@ const SEED_INSTRUCTIONS = seeds.flatMap(s => s.instructionRows);
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
+const BACKEND_SECRET = process.env.BACKEND_SECRET || 'kavis_kitchen_secret_2026';
 
 export const supabaseClient = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
@@ -385,16 +386,13 @@ export const db = {
     }));
 
     if (isSupabaseConfigured && supabaseClient) {
-      // Note: Ideally done in a transaction/RPC in Supabase, but done sequentially here
-      const { error: rErr } = await supabaseClient.from('recipes').insert([recipeRow]);
-      if (rErr) throw rErr;
-      
-      if (ingredientRows.length > 0) {
-        await supabaseClient.from('ingredients').insert(ingredientRows);
-      }
-      if (instructionRows.length > 0) {
-        await supabaseClient.from('instructions').insert(instructionRows);
-      }
+      const { data, error } = await supabaseClient.rpc('secure_create_recipe', {
+        secret_token: BACKEND_SECRET,
+        p_recipe: recipeRow,
+        p_ingredients: ingredientRows,
+        p_instructions: instructionRows
+      });
+      if (error) throw error;
       
       return mapToFrontendRecipe(recipeRow, ingredientRows, instructionRows);
     } else {
@@ -442,17 +440,14 @@ export const db = {
     }
 
     if (isSupabaseConfigured && supabaseClient) {
-      if (Object.keys(rowUpdates).length > 0) {
-        await supabaseClient.from('recipes').update(rowUpdates).eq('id', id);
-      }
-      if (ingredientRows) {
-        await supabaseClient.from('ingredients').delete().eq('recipe_id', id);
-        if (ingredientRows.length > 0) await supabaseClient.from('ingredients').insert(ingredientRows);
-      }
-      if (instructionRows) {
-        await supabaseClient.from('instructions').delete().eq('recipe_id', id);
-        if (instructionRows.length > 0) await supabaseClient.from('instructions').insert(instructionRows);
-      }
+      const { error } = await supabaseClient.rpc('secure_update_recipe', {
+        secret_token: BACKEND_SECRET,
+        p_recipe_id: id,
+        p_recipe: rowUpdates,
+        p_ingredients: ingredientRows,
+        p_instructions: instructionRows
+      });
+      if (error) throw error;
       
       return await this.getRecipeById(id);
     } else {
@@ -481,16 +476,16 @@ export const db = {
 
   async deleteRecipe(id: string): Promise<boolean> {
     if (isSupabaseConfigured && supabaseClient) {
-      // Must delete children first if no cascade is setup in Supabase, but let's assume no cascade to be safe
-      await supabaseClient.from('ingredients').delete().eq('recipe_id', id);
-      await supabaseClient.from('instructions').delete().eq('recipe_id', id);
-      const { error } = await supabaseClient.from('recipes').delete().eq('id', id);
+      const { data, error } = await supabaseClient.rpc('secure_delete_recipe', {
+        secret_token: BACKEND_SECRET,
+        p_recipe_id: id
+      });
       
       if (error) {
         console.error('Supabase deleteRecipe error:', error);
         return false;
       }
-      return true;
+      return data as boolean;
     } else {
       const recipes = globalThis._dbRecipes || [];
       const len = recipes.length;
