@@ -25,6 +25,8 @@ export default function Header() {
     { href: '/', label: 'Home' },
     { href: '/search', label: 'Search Recipes' },
     { href: '/add-recipe', label: 'Add Recipe' },
+    { href: '/about', label: 'About Us' },
+    { href: '/contact', label: 'Contact' },
   ];
 
   if (adminMode) {

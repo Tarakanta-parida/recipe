@@ -7,36 +7,23 @@ export const storage = {
    * Note: This function is designed to run in client-side components.
    */
   async uploadImage(file: File): Promise<string> {
-    const isSupabaseConfigured = !!(
-      process.env.NEXT_PUBLIC_SUPABASE_URL && 
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
 
-    if (isSupabaseConfigured && supabaseClient) {
-      try {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `recipes/${fileName}`;
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
 
-        const { error: uploadError } = await supabaseClient.storage
-          .from('recipe-images')
-          .upload(filePath, file);
-
-        if (uploadError) {
-          throw uploadError;
-        }
-
-        const { data: urlData } = supabaseClient.storage
-          .from('recipe-images')
-          .getPublicUrl(filePath);
-
-        return urlData.publicUrl;
-      } catch (err) {
-        console.error('Supabase storage upload error, falling back to base64:', err);
-        return this.fileToBase64(file);
+      if (!res.ok) {
+        throw new Error('Failed to upload image to server');
       }
-    } else {
-      // Local development fallback: Base64 Data URL
+
+      const data = await res.json();
+      return data.url; // This will be the Cloudinary URL, or local base64 if credentials are missing
+    } catch (err) {
+      console.error('Upload error, falling back to client-side base64:', err);
       return this.fileToBase64(file);
     }
   },

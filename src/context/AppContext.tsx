@@ -26,7 +26,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [adminMode, setAdminMode] = useState<boolean>(false);
+  const [adminMode, setAdminMode] = useState<boolean>(true);
   const [adminPassword, setAdminPassword] = useState<string | null>(null);
   const [isPasswordSet, setIsPasswordSet] = useState<boolean>(true); // Assume true initially to avoid flicker, then update in useEffect
   const [theme, setTheme] = useState<Theme>('light');
@@ -87,7 +87,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTheme(nextTheme);
     localStorage.setItem('kavi_theme', nextTheme);
     document.documentElement.setAttribute('data-theme', nextTheme);
-    showToast(`Switched to ${nextTheme === 'dark' ? 'Dark Mode' : 'Light Mode'}`, 'info');
+    showToast(`Switched to ${nextTheme === 'dark' ? 'Light Mode' : 'Light Mode'}`, 'info');
   };
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
