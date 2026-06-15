@@ -5,6 +5,7 @@ import { AppProvider } from "@/context/AppContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ToastContainer from "@/components/ToastContainer";
+import PWARegistration from "@/components/PWARegistration";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -21,6 +22,12 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Kavi's Traditional Kitchen - Preserving Culinary Heritage",
   description: "Browse, search, and share traditional cooking recipes passed down through generations. Preserve family knowledge and cultural heritage.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Kavi's Kitchen",
+  },
 };
 
 export default function RootLayout({
@@ -45,6 +52,7 @@ export default function RootLayout({
           </main>
           <Footer />
           <ToastContainer />
+          <PWARegistration />
         </AppProvider>
       </body>
     </html>

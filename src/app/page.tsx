@@ -77,7 +77,7 @@ export default function HomePage() {
     <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col gap-16 animate-fade-in">
       {/* Hero Banner Section */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-        <div className="lg:col-span-7 flex flex-col gap-6">
+        <div className="order-last lg:order-first lg:col-span-7 flex flex-col gap-6">
           <h1 className="font-display text-5xl md:text-6xl font-bold leading-tight tracking-tight">
             Preserving <span className="text-primary relative inline-block">Traditional <span className="absolute bottom-2 left-0 w-full h-2.5 bg-primary/10 -z-10" /></span> Cooking Knowledge
           </h1>
@@ -85,9 +85,10 @@ export default function HomePage() {
             Welcome to Kavi&apos;s Traditional Kitchen. Discover and share heirloom family recipes, cultural dishes, and traditional cooking methods passed down through generations.
           </p>
 
-          <form onSubmit={handleSearchSubmit} className="flex items-center bg-card border border-border shadow-md rounded-2xl p-1.5 max-w-lg w-full focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
+          <form onSubmit={handleSearchSubmit} suppressHydrationWarning className="flex items-center bg-card border border-border shadow-md rounded-2xl p-1.5 max-w-lg w-full focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
             <input
               type="text"
+              suppressHydrationWarning
               placeholder="Search Chicken Curry, Dosa, Rendang..."
               className="flex-1 bg-transparent border-0 px-4 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-0 text-sm md:text-base"
               value={searchQuery}
@@ -95,6 +96,7 @@ export default function HomePage() {
             />
             <button
               type="submit"
+              suppressHydrationWarning
               className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold px-6 py-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-2 hover:translate-x-0.5"
             >
               <Search className="w-4 h-4" />
@@ -103,7 +105,7 @@ export default function HomePage() {
           </form>
         </div>
 
-        <div className="lg:col-span-5 flex justify-center items-center relative">
+        <div className="order-first lg:order-last lg:col-span-5 flex justify-center items-center relative">
           <div className="relative w-full max-w-[360px] aspect-square rounded-full overflow-hidden flex items-center justify-center shadow-xl border-4 border-primary/20 hover:scale-[1.03] transition-all duration-500">
             <img
               src="/assets/logo.jpg"
@@ -123,6 +125,7 @@ export default function HomePage() {
             return (
               <button
                 key={cat}
+                suppressHydrationWarning
                 onClick={() => setSelectedCategory(cat)}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold border cursor-pointer transition-all hover:-translate-y-0.5 ${
                   isActive
