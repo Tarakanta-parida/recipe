@@ -32,8 +32,12 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${playfair.variable} ${outfit.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col font-sans bg-background text-foreground transition-colors duration-300">
+      <body 
+        className="min-h-full flex flex-col font-sans bg-background text-foreground transition-colors duration-300"
+        suppressHydrationWarning
+      >
         <AppProvider>
           <Header />
           <main className="flex-grow pt-24 pb-16">

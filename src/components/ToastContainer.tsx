@@ -8,7 +8,7 @@ export default function ToastContainer() {
   const { toasts } = useApp();
 
   return (
-    <div className="fixed bottom-6 right-6 z-[999] flex flex-col gap-3 max-w-sm w-full pointer-events-none">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-auto md:right-6 md:translate-x-0 z-[999] flex flex-col gap-3 max-w-[calc(100vw-2rem)] md:max-w-sm w-full pointer-events-none">
       {toasts.map((toast) => {
         const isSuccess = toast.type === 'success';
         const isError = toast.type === 'error';

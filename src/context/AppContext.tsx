@@ -14,6 +14,9 @@ interface AppContextType {
   adminMode: boolean;
   toggleAdminMode: () => void;
   enableAdminMode: () => void;
+  adminPassword: string | null;
+  isPasswordSet: boolean;
+  changeAdminPassword: (newPass: string) => void;
   theme: Theme;
   toggleTheme: () => void;
   toasts: Toast[];
@@ -24,6 +27,8 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [adminMode, setAdminMode] = useState<boolean>(false);
+  const [adminPassword, setAdminPassword] = useState<string | null>(null);
+  const [isPasswordSet, setIsPasswordSet] = useState<boolean>(true); // Assume true initially to avoid flicker, then update in useEffect
   const [theme, setTheme] = useState<Theme>('light');
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -32,6 +37,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const storedAdmin = localStorage.getItem('kavi_admin_mode');
     if (storedAdmin === 'true') {
       setAdminMode(true);
+    }
+
+    const storedPassword = localStorage.getItem('kavi_admin_password');
+    if (storedPassword) {
+      setAdminPassword(storedPassword);
+      setIsPasswordSet(true);
+    } else {
+      setAdminPassword(null);
+      setIsPasswordSet(false);
     }
 
     const storedTheme = (localStorage.getItem('kavi_theme') as Theme) || 'light';
@@ -45,11 +59,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     showToast('Admin Mode Enabled: You can now approve, edit, or delete recipes.', 'success');
   };
 
+  const changeAdminPassword = (newPass: string) => {
+    setAdminPassword(newPass);
+    setIsPasswordSet(true);
+    localStorage.setItem('kavi_admin_password', newPass);
+    showToast(isPasswordSet ? 'Admin password updated successfully!' : 'Admin password set successfully!', 'success');
+  };
+
   const toggleAdminMode = () => {
     if (!adminMode) {
       const password = prompt('Enter Admin Password to enable Admin Mode:');
       if (password === null) return; // User cancelled
-      if (password === 'admin123') {
+      if (password === adminPassword) {
         enableAdminMode();
       } else {
         showToast('Incorrect password.', 'error');
@@ -80,7 +101,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AppContext.Provider value={{ adminMode, toggleAdminMode, enableAdminMode, theme, toggleTheme, toasts, showToast }}>
+    <AppContext.Provider value={{ adminMode, toggleAdminMode, enableAdminMode, adminPassword, isPasswordSet, changeAdminPassword, theme, toggleTheme, toasts, showToast }}>
       {children}
     </AppContext.Provider>
   );

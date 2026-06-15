@@ -10,10 +10,38 @@ import PasswordGate from '@/components/PasswordGate';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const { adminMode, showToast } = useApp();
+  const { adminMode, adminPassword, changeAdminPassword, showToast } = useApp();
 
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
+  const handlePasswordChangeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (currentPassword !== adminPassword) {
+      setPasswordError('Current password is incorrect.');
+      return;
+    }
+    if (newPassword.length < 4) {
+      setPasswordError('New password must be at least 4 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+    
+    changeAdminPassword(newPassword);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError('');
+  };
 
   // Fetch all recipes for management
   const fetchRecipes = async () => {
@@ -215,8 +243,72 @@ export default function AdminDashboardPage() {
               </div>
             )}
           </div>
-        </div>
       </div>
-    </PasswordGate>
+
+      {/* Settings Section */}
+      <section className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-sm max-w-xl mt-6">
+        <div className="flex flex-col gap-1.5 mb-6">
+          <h2 className="font-display text-2xl font-bold flex items-center gap-2">
+            <Lock className="w-5 h-5 text-primary" /> Admin Security Settings
+          </h2>
+          <p className="text-muted-foreground text-xs md:text-sm">
+            Change the password used to protect Admin Mode, the Dashboard, and Recipe submissions.
+          </p>
+        </div>
+
+        <form onSubmit={handlePasswordChangeSubmit} className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {passwordError && (
+              <div className="flex flex-col gap-1.5 col-span-1 md:col-span-3">
+                <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold p-3 rounded-xl">
+                  {passwordError}
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-foreground">Current Password</label>
+              <input
+                type="password"
+                required
+                className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-foreground">New Password</label>
+              <input
+                type="password"
+                required
+                className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-foreground">Confirm New Password</label>
+              <input
+                type="password"
+                required
+                className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="self-start bg-primary hover:bg-primary/95 text-primary-foreground font-semibold px-5 py-2 rounded-xl cursor-pointer text-xs transition-all shadow-sm active:scale-[0.98] mt-2"
+          >
+            Update Password
+          </button>
+        </form>
+      </section>
+    </div>
+  </PasswordGate>
   );
 }
