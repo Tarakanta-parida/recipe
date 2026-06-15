@@ -30,12 +30,6 @@ export default function Footer() {
             <li>
               <Link href="/add-recipe" className="hover:text-primary transition-colors">Add Recipe</Link>
             </li>
-            <li>
-              <Link href="/about" className="hover:text-primary transition-colors">About Us</Link>
-            </li>
-            <li>
-              <Link href="/contact" className="hover:text-primary transition-colors">Contact</Link>
-            </li>
           </ul>
         </div>
 

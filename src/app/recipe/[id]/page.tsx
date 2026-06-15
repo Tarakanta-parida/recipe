@@ -124,8 +124,8 @@ export default function RecipeDetailPage({ params }: PageProps) {
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
         
-        {/* Left Side: Image, Description, Steps */}
-        <div className="lg:col-span-8 bg-card border border-border rounded-3xl overflow-hidden shadow-sm flex flex-col">
+        {/* Card A: Image, Description, Stats */}
+        <div className="lg:col-span-8 bg-card border border-border rounded-3xl overflow-hidden shadow-sm flex flex-col order-1">
           <div className="relative aspect-video w-full bg-secondary">
             <img src={recipe.image} alt={recipe.name} className="w-full h-full object-cover" />
           </div>
@@ -169,23 +169,6 @@ export default function RecipeDetailPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Cooking Steps */}
-            <div className="flex flex-col gap-6">
-              <h3 className="font-display text-2xl font-bold flex items-center gap-2 text-foreground">
-                <ChefHat className="w-6 h-6 text-primary" /> Cooking Steps
-              </h3>
-              <div className="flex flex-col gap-6">
-                {recipe.steps.map((step, idx) => (
-                  <div key={idx} className="flex gap-4 p-5 rounded-2xl bg-secondary/30 border border-border/40 border-l-4 border-l-primary">
-                    <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0 shadow-sm">
-                      {idx + 1}
-                    </div>
-                    <p className="text-foreground text-sm md:text-base leading-relaxed pt-0.5">{step}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Admin operations buttons */}
             {adminMode && (
               <div className="flex items-center gap-4 flex-wrap border-t border-border pt-8 mt-4">
@@ -214,8 +197,8 @@ export default function RecipeDetailPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Right Side: Ingredients Checklist Card */}
-        <div className="lg:col-span-4 lg:sticky lg:top-28 bg-card border border-border rounded-3xl p-6 md:p-8 shadow-sm flex flex-col gap-6">
+        {/* Card B: Ingredients Checklist Card */}
+        <div className="lg:col-span-4 lg:row-span-2 lg:sticky lg:top-28 bg-card border border-border rounded-3xl p-6 md:p-8 shadow-sm flex flex-col gap-6 order-2">
           <div className="flex flex-col gap-2">
             <h3 className="font-display text-2xl font-bold text-foreground">Ingredients</h3>
             <p className="text-muted-foreground text-xs leading-relaxed">
@@ -258,6 +241,23 @@ export default function RecipeDetailPage({ params }: PageProps) {
             <span>
               <strong className="text-primary">Traditional Tip:</strong> Traditional recipes flavor best when ingredients are prepared fresh and spices are toasted gently before grinding!
             </span>
+          </div>
+        </div>
+
+        {/* Card C: Cooking Steps Card */}
+        <div className="lg:col-span-8 bg-card border border-border rounded-3xl p-8 md:p-10 shadow-sm flex flex-col gap-6 order-3 animate-fade-in">
+          <h3 className="font-display text-2xl font-bold flex items-center gap-2 text-foreground">
+            <ChefHat className="w-6 h-6 text-primary" /> Cooking Steps
+          </h3>
+          <div className="flex flex-col gap-6">
+            {recipe.steps.map((step, idx) => (
+              <div key={idx} className="flex gap-4 p-5 rounded-2xl bg-secondary/30 border border-border/40 border-l-4 border-l-primary">
+                <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0 shadow-sm">
+                  {idx + 1}
+                </div>
+                <p className="text-foreground text-sm md:text-base leading-relaxed pt-0.5">{step}</p>
+              </div>
+            ))}
           </div>
         </div>
 

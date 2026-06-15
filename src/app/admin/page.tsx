@@ -4,31 +4,32 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
-import { Recipe } from '@/lib/db';
-import { Utensils, CheckCircle2, Clock, Check, Edit, Trash, Lock, ShieldAlert, Loader2 } from 'lucide-react';
+import { Recipe, supabaseClient } from '@/lib/db';
+import { Utensils, CheckCircle2, Clock, Check, Edit, Trash, Lock, ShieldAlert, Loader2, Users } from 'lucide-react';
 import PasswordGate from '@/components/PasswordGate';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const { adminMode, adminPassword, changeAdminPassword, showToast } = useApp();
+  const { adminMode, changeAdminPassword, showToast, user, userRole } = useApp();
 
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // User Approval Queue States
+  const [pendingUsers, setPendingUsers] = useState<any[]>([]);
+  const [fetchingUsers, setFetchingUsers] = useState(false);
 
   // Password change states
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [passwordUpdating, setPasswordUpdating] = useState(false);
 
-  const handlePasswordChangeSubmit = (e: React.FormEvent) => {
+  const handlePasswordChangeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentPassword !== adminPassword) {
-      setPasswordError('Current password is incorrect.');
-      return;
-    }
-    if (newPassword.length < 4) {
-      setPasswordError('New password must be at least 4 characters long.');
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters long.');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -36,11 +37,22 @@ export default function AdminDashboardPage() {
       return;
     }
     
-    changeAdminPassword(newPassword);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    setPasswordUpdating(true);
     setPasswordError('');
+    
+    try {
+      const success = await changeAdminPassword(currentPassword, newPassword);
+      if (success) {
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+    } catch (err) {
+      console.error(err);
+      setPasswordError('An unexpected error occurred.');
+    } finally {
+      setPasswordUpdating(false);
+    }
   };
 
   // Fetch all recipes for management
@@ -62,11 +74,58 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Fetch pending user approvals
+  const fetchPendingUsers = async () => {
+    if (!supabaseClient || userRole !== 'admin') return;
+    try {
+      setFetchingUsers(true);
+      const { data, error } = await supabaseClient
+        .from('user_roles')
+        .select('*')
+        .eq('role', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Fetch pending users error:', error);
+      } else {
+        setPendingUsers(data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching pending users:', err);
+    } finally {
+      setFetchingUsers(false);
+    }
+  };
+
+  // Confirm pending user role to grant access
+  const handleApproveUser = async (pendingUserId: string, pendingUserEmail: string) => {
+    if (!supabaseClient) return;
+    try {
+      const { error } = await supabaseClient
+        .from('user_roles')
+        .update({ role: 'editor', approved_by: user?.id })
+        .eq('id', pendingUserId);
+
+      if (error) {
+        showToast('Failed to approve user: ' + error.message, 'error');
+      } else {
+        showToast(`Approved access for ${pendingUserEmail}!`, 'success');
+        fetchPendingUsers();
+      }
+    } catch (err) {
+      console.error('Approve user error:', err);
+      showToast('Error approving user.', 'error');
+    }
+  };
+
   useEffect(() => {
     if (adminMode) {
       fetchRecipes();
+      if (userRole === 'admin') {
+        fetchPendingUsers();
+      }
     }
-  }, [adminMode, showToast]);
+  }, [adminMode, userRole, showToast]);
 
   const handleApprove = async (id: string, name: string) => {
     try {
@@ -245,69 +304,125 @@ export default function AdminDashboardPage() {
           </div>
       </div>
 
-      {/* Settings Section */}
-      <section className="bg-card border border-border rounded-3xl p-6 md:p-8 shadow-sm max-w-xl mt-6">
-        <div className="flex flex-col gap-1.5 mb-6">
-          <h2 className="font-display text-2xl font-bold flex items-center gap-2">
-            <Lock className="w-5 h-5 text-primary" /> Admin Security Settings
-          </h2>
-          <p className="text-muted-foreground text-xs md:text-sm">
-            Change the password used to protect Admin Mode, the Dashboard, and Recipe submissions.
-          </p>
-        </div>
+      {/* Lower Panel Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-6">
+        {/* User Management Panel (only visible to super-admins) */}
+        {userRole === 'admin' && (
+          <section className="lg:col-span-7 bg-card border border-border rounded-3xl p-6 md:p-8 shadow-sm flex flex-col gap-6 w-full">
+            <div className="flex flex-col gap-1.5">
+              <h2 className="font-display text-2xl font-bold flex items-center gap-2 text-foreground">
+                <Users className="w-5 h-5 text-primary" /> User Approval & Registrations
+              </h2>
+              <p className="text-muted-foreground text-xs md:text-sm">
+                Confirm pending registration requests from new editors to grant them write access.
+              </p>
+            </div>
 
-        <form onSubmit={handlePasswordChangeSubmit} className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {passwordError && (
-              <div className="flex flex-col gap-1.5 col-span-1 md:col-span-3">
+            {fetchingUsers ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              </div>
+            ) : pendingUsers.length > 0 ? (
+              <div className="overflow-x-auto border border-border rounded-2xl">
+                <table className="w-full border-collapse text-left text-xs">
+                  <thead>
+                    <tr className="bg-secondary/40 border-b border-border font-bold text-foreground">
+                      <th className="px-4 py-3">Email Address</th>
+                      <th className="px-4 py-3">Requested At</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {pendingUsers.map((u) => (
+                      <tr key={u.id} className="hover:bg-secondary/20 transition-colors">
+                        <td className="px-4 py-3.5 font-semibold text-foreground">{u.email}</td>
+                        <td className="px-4 py-3.5 text-muted-foreground">
+                          {new Date(u.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <button
+                            onClick={() => handleApproveUser(u.id, u.email)}
+                            className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-3 py-1.5 rounded-lg cursor-pointer transition-all active:scale-[0.98] text-xs"
+                          >
+                            Confirm Access
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-10 px-4 bg-secondary/10 border border-dashed border-border rounded-2xl text-muted-foreground font-semibold">
+                No pending registration requests.
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Security Settings Section */}
+        <section className={`${userRole === 'admin' ? 'lg:col-span-5' : 'max-w-xl'} bg-card border border-border rounded-3xl p-6 md:p-8 shadow-sm flex flex-col gap-6 w-full`}>
+          <div className="flex flex-col gap-1.5">
+            <h2 className="font-display text-2xl font-bold flex items-center gap-2 text-foreground">
+              <Lock className="w-5 h-5 text-primary" /> Admin Security Settings
+            </h2>
+            <p className="text-muted-foreground text-xs md:text-sm">
+              Change the password used to protect your administrator account in Supabase.
+            </p>
+          </div>
+
+          <form onSubmit={handlePasswordChangeSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
+              {passwordError && (
                 <div className="bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold p-3 rounded-xl">
                   {passwordError}
                 </div>
+              )}
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-foreground">Current Password</label>
+                <input
+                  type="password"
+                  required
+                  className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
               </div>
-            )}
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-foreground">Current Password</label>
-              <input
-                type="password"
-                required
-                className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-              />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-foreground">New Password</label>
+                <input
+                  type="password"
+                  required
+                  className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-foreground">Confirm New Password</label>
+                <input
+                  type="password"
+                  required
+                  className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-foreground">New Password</label>
-              <input
-                type="password"
-                required
-                className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-foreground">Confirm New Password</label>
-              <input
-                type="password"
-                required
-                className="w-full bg-secondary/30 border border-border rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="self-start bg-primary hover:bg-primary/95 text-primary-foreground font-semibold px-5 py-2 rounded-xl cursor-pointer text-xs transition-all shadow-sm active:scale-[0.98] mt-2"
-          >
-            Update Password
-          </button>
-        </form>
-      </section>
+            <button
+              type="submit"
+              disabled={passwordUpdating}
+              className="self-start bg-primary hover:bg-primary/95 text-primary-foreground font-semibold px-5 py-2 rounded-xl cursor-pointer text-xs transition-all shadow-sm active:scale-[0.98] mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {passwordUpdating ? 'Updating...' : 'Update Password'}
+            </button>
+          </form>
+        </section>
+      </div>
     </div>
   </PasswordGate>
   );

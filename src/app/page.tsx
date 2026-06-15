@@ -65,8 +65,6 @@ export default function HomePage() {
     ? recipes
     : recipes.filter(r => r.category.toLowerCase() === selectedCategory.toLowerCase());
 
-  // Featured Recipes
-  const featuredRecipes = filteredRecipes.filter(r => r.featured);
 
   // Latest Recipes (sorted by date descending)
   const latestRecipes = [...filteredRecipes].sort(
@@ -148,24 +146,6 @@ export default function HomePage() {
         </div>
       ) : (
         <>
-          {/* Featured Section */}
-          <section className="flex flex-col gap-8">
-            <h2 className="font-display text-3xl font-bold border-b border-border/60 pb-3">Featured Heritage Recipes</h2>
-            {featuredRecipes.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {featuredRecipes.map((recipe) => (
-                  <RecipeCard key={recipe.id} recipe={recipe} />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-16 px-4 bg-card border border-dashed border-border rounded-2xl flex flex-col items-center gap-3">
-                <ChefHat className="w-12 h-12 text-muted-foreground/60" />
-                <h3 className="font-display text-xl font-semibold">No Featured Recipes</h3>
-                <p className="text-muted-foreground text-sm">No featured dishes under &quot;{selectedCategory}&quot; category yet.</p>
-              </div>
-            )}
-          </section>
-
           {/* Latest Section */}
           <section className="flex flex-col gap-8">
             <h2 className="font-display text-3xl font-bold border-b border-border/60 pb-3">Latest Additions</h2>
